@@ -1,0 +1,197 @@
+/* Griffen Herrera */
+
+/* STAT521 Project 2 */
+
+libname griff "/home/u49677901/STAT521/";
+
+proc import datafile= '/home/u49677901/STAT521/SeatBelts.xls' 
+dbms=xls out=griff.Project0 replace;
+run;
+
+data griff.Project1;
+set griff.Project0;
+
+	if speed70=1 then SpeedLimit = '70+ mph';
+	else if speed70=0 then SpeedLimit = 'Other';
+	
+	if drinkage21=1 then AlcoholAge21 = 'Yes';
+	else if drinkage21=0 then AlcoholAge21 = 'No';
+	
+	if ba08=1 then AlcoholLimit = 'BA =<.08';
+	else if ba08=0 then AlcoholLimit = 'Other';
+	
+	if primary=1 then SeatBeltLaw = 'Yes';
+	else if primary=0 then SeatBeltLaw = 'No';
+run;
+
+data griff.Project2;
+set griff.project1;
+format income dollar7. vmt comma7. age 2. fatalityrate 6.3 sb_usage 5.2;
+run;
+
+proc sort data=griff.Project2 out=griff.Project3;
+by state descending fatalityrate;
+run;
+
+/* Sub Dataset */
+
+data griff.Project4 (keep= state year fatalityrate);
+set griff.Project3;
+by state;
+if first.state then output griff.Project4;
+run;
+
+proc print data= griff.Project4;
+run;
+
+proc sort data=griff.project2 out=griff.project5;
+by state year;
+run;
+
+/* Transposed Sub Dataset */
+
+proc transpose data=griff.Project2 prefix=Year_
+			   out=griff.Project6 (drop=_NAME_);
+		where substr(state,1,2) in ('CA','CO','CT') and year>=1990;
+		by state;
+		id year;
+		idlabel year;
+		var sb_useage;
+		format year 4. sb_useage 5.2;
+run;
+
+proc print data=griff.Project6 (drop=_LABEL_) label;
+title 'Progession of Seat Belt Usage';
+run;
+
+/* Descriptive Statistics of Numeric Variables */
+
+proc means data=griff.Project2 n mean median max min stddev;
+var income;
+title 'Income';
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+var vmt;
+title 'Millions of Traffic Miles per Year';
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+var age;
+title 'Age';
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+var fatalityrate;
+title 'Fatality Rate';
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+var sb_useage;
+title 'Seat Belt Usage';
+run;
+
+/* Descriptive Statistics of Numeric Variables by Characterically Variables */
+
+proc means data=griff.Project2 n mean median max min stddev;
+by state;
+var income age vmt fatalityrate sb_useage;
+run;
+
+proc sort data=griff.Project2;
+by SpeedLimit;
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+by SpeedLimit;
+var income age vmt fatalityrate sb_useage;
+run;
+
+proc sort data=griff.Project2;
+by AlcoholLimit;
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+by AlcoholLimit;
+var income age vmt fatalityrate sb_useage;
+run;
+
+proc sort data=griff.Project2;
+by AlcoholAge21;
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+by AlcoholAge21;
+var income age vmt fatalityrate sb_useage;
+run;
+
+proc sort data=griff.Project2;
+by SeatBeltLaw;
+run;
+
+proc means data=griff.Project2 n mean median max min stddev;
+by SeatBeltLaw;
+var income age vmt fatalityrate sb_useage;
+run;
+
+/* Histograms of every numeric variable */
+
+proc univariate data=griff.Project2 noprint;
+histogram income;
+title 'Per Person Income Histogram';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram vmt;
+title 'Millions of Traffic Miles per Year Histogram';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram Age;
+title 'Age Histogram';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram fatalityrate;
+title 'Fatality Rate Histogram';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram sb_useage;
+title 'Seat Bealt Usage Histogram';
+run;
+
+/* Density Plots of every numeric variable */
+
+proc univariate data=griff.Project2 noprint;
+histogram income/kernel;
+title 'Income Density Plot';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram vmt/kernel;
+title 'Millions of Traffic Miles per Year Density Plot';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram Age/kernel;
+title 'Age Density Plot';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram fatalityrate/kernel;
+title 'Fatality Rate Density Plot';
+run;
+
+proc univariate data=griff.Project2 noprint;
+histogram sb_useage/kernel;
+title 'Seat Belt Usage Density Plot';
+run;
+
+/* Partial Dataset */
+
+proc print data=griff.Project2 (drop= speed70 sb_usage ba08 primary drinkage21);
+where state = 'NY';
+ID state;
+title 'Partial Data Set';
+run;
