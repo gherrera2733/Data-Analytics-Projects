@@ -1,0 +1,87 @@
+/* Griffen Herrera */
+ 
+/* STAT575 Project */
+
+data ipums;
+	infile '/home/u49677901/STAT575/ipums_sample.csv' dlm=',' firstobs=2;
+	input Log_Income Age Gend;
+	sampwt = 44846/500;
+	if Gend = 1 then Gender = 'M';
+	else if Gend = 2 then Gender = 'F';
+run;
+
+/* histogram of Log Income */
+proc univariate data=ipums noprint;
+histogram Log_Income;
+run;
+
+proc sort data=ipums;
+by Gender;
+run;
+
+/* Descriptive Statistics of Variables */  
+proc means data=ipums n mean median min max stddev;
+var Log_Income Age;
+weight sampwt;
+run;
+
+proc freq data=ipums;
+tables Gender;
+run;
+
+/* Population Mean Log Income SRS */
+proc surveymeans data=ipums total=44846 nobs mean sum clm clsum;
+var Log_Income;
+weight sampwt;
+run;
+
+/* Box Plot of Log Income by Gender */
+proc boxplot data=ipums;
+plot Log_Income * Gender / boxstyle=schematic;
+run;
+
+/* Stratified population mean log income by each gender */
+proc surveymeans data=ipums total=44846 nobs mean sum clm clsum;
+stratum Gender;
+var Log_Income;
+weight sampwt;
+by Gender;
+run;
+
+/* Correlation coefficient between Log Income and Age */
+proc corr data=ipums;
+var Log_Income Age;
+run;
+
+/* Scatter Plot of Log Income vs Age */
+proc sgplot data=ipums;
+scatter x=Log_Income y=Age;
+reg x=Log_Income y=Age;
+run;
+
+/* Population Mean Log Income with Ratio Estimation */
+proc surveymeans data=ipums total=44846 nobs mean clm sum clsum stderr;
+	var Log_Income Age; /* Need both y and x in var statement */
+	ratio Log_Income/Age;
+	weight sampwt;
+	ODS output Statistics=stat_out Ratio=ratio_out;
+run;
+
+data ratio_y;
+set ratio_out;
+	xmean = 42.4;
+	ratio_ymean=ratio*xmean; 
+	se_ymean = stderr*xmean;
+	lowercl_ymean=lowercl*xmean;
+	uppercl_ymean=uppercl*xmean;
+run;
+
+proc print data=ratio_y;
+run;
+
+/* Population Mean Log Income with Regression Estimation */
+proc surveyreg data=ipums total=44846;
+	model Log_Income=Age / clparm; 
+	weight sampwt;
+	estimate 'Population Mean LogIncome' intercept 1 Age 42.4;
+run;
